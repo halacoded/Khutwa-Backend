@@ -8,11 +8,7 @@ const NotFoundHandller = require("./middleware/notFoundHandler");
 const ErrorHandler = require("./middleware/errorHandler");
 const passport = require("passport");
 const path = require("path");
-const {
-  localStrategy,
-  jwtStrategy,
-  JwtStrategy,
-} = require("./middleware/passport");
+const { localStrategy, JwtStrategy } = require("./middleware/passport");
 
 //import route
 const usersRouter = require("./api/User/User.router.js");
@@ -30,7 +26,7 @@ passport.use("local", localStrategy);
 passport.use("jwt", JwtStrategy);
 
 //Routes
-app.use("/api/users", usersRouter);
+app.use("/users", usersRouter);
 
 //Handler
 app.use(NotFoundHandller);

@@ -8,18 +8,29 @@ dotenv.config();
 
 const localStrategy = new LocalStrategy(
   {
-    usernameField: "username",
+    usernameField: "email",
     passwordField: "password",
   },
-  async (username, password, done) => {
+  async (email, password, done) => {
     try {
-      const foundUser = await User.findOne({ username: username }); //find the user
-      if (!foundUser)
-        return done({ message: "Username or password incorrect" });
-      const isMatch = await bcrypt.compare(password, foundUser.password); //check password
-      if (!isMatch) return done({ message: "Username or password incorrect" });
-      return done(null, foundUser); //req.user //go to controller if all's good
+      console.log("Passport looking for user with email:", email);
+
+      const foundUser = await User.findOne({ email: email });
+      if (!foundUser) {
+        console.log("User not found with email:", email);
+        return done(null, false, { message: "Email or password incorrect" });
+      }
+
+      const isMatch = await bcrypt.compare(password, foundUser.password);
+      if (!isMatch) {
+        console.log("Password mismatch for user:", email);
+        return done(null, false, { message: "Email or password incorrect" });
+      }
+
+      console.log("Login successful for:", email);
+      return done(null, foundUser);
     } catch (error) {
+      console.error("Passport error:", error);
       return done(error);
     }
   }
@@ -33,13 +44,13 @@ const JwtStrategy = new JWTStrategy(
   async (payload, done) => {
     try {
       const user = await User.findById(payload.id);
-      if (!user) return done({ messsage: "User is not Found" });
+      if (!user) return done(null, false, { message: "User not found" });
 
-      const expiry = new Date(payload.exp * 1000); // It converts the expiration timestamp from the JWT (which is in seconds) to millisecond
+      const expiry = new Date(payload.exp * 1000);
       const now = new Date();
-      if (now > expiry) return done({ message: "Token expired" });
+      if (now > expiry) return done(null, false, { message: "Token expired" });
 
-      return done(null, user); //req.user
+      return done(null, user);
     } catch (error) {
       return done(error);
     }
