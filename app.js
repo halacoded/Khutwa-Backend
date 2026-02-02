@@ -12,6 +12,7 @@ const { localStrategy, JwtStrategy } = require("./middleware/passport");
 
 //import route
 const usersRouter = require("./api/User/User.router.js");
+const sensorRouter = require("./api/Sensor/Sensor.router.js");
 //init
 dotenv.config();
 const app = express();
@@ -27,7 +28,8 @@ passport.use("jwt", JwtStrategy);
 
 //Routes
 app.use("/users", usersRouter);
-
+app.use("/media", express.static(path.join(__dirname, "media")));
+app.use("/api", sensorRouter);
 //Handler
 app.use(NotFoundHandller);
 app.use(ErrorHandler);

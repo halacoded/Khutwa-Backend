@@ -11,7 +11,11 @@ const {
 const authenticate = passport.authenticate("jwt", { session: false });
 
 // Authentication routes
-usersRouter.post("/signup", signup);
+usersRouter.post(
+  "/signup",
+  upload.fields([{ name: "ProfileImage", maxCount: 1 }]),
+  signup
+);
 usersRouter.post(
   "/signin",
   passport.authenticate("local", { session: false }),
@@ -20,6 +24,11 @@ usersRouter.post(
 
 // User management routes
 usersRouter.get("/profile", authenticate, getProfile);
-usersRouter.put("/profile", authenticate, updateProfile);
+usersRouter.put(
+  "/profile",
+  authenticate,
+  upload.fields([{ name: "ProfileImage", maxCount: 1 }]),
+  updateProfile
+);
 
 module.exports = usersRouter;

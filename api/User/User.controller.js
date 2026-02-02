@@ -1,6 +1,8 @@
 const User = require("../../models/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const fs = require("fs");
+const path = require("path");
 const saltRounds = 10;
 const dotenv = require("dotenv");
 dotenv.config();
@@ -19,7 +21,6 @@ const generateToken = (user) => {
   const payload = {
     id: user._id,
     email: user.email,
-    role: user.role,
   };
 
   const token = jwt.sign(payload, process.env.JWT_SECRET, {
@@ -31,19 +32,12 @@ const generateToken = (user) => {
 // SIGNUP CONTROLLER
 exports.signup = async (req, res, next) => {
   try {
-    const {
-      name,
-      email,
-      password,
-      confirmPassword,
-      role,
-      phone,
-      ...profileData
-    } = req.body;
+    const { name, email, password, confirmPassword, phone, dateOfBirth } =
+      req.body;
     console.log("Received data:", req.body);
 
     // Check if all required fields are provided
-    if (!name || !email || !password || !confirmPassword || !role) {
+    if (!name || !email || !password || !confirmPassword) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -58,11 +52,6 @@ exports.signup = async (req, res, next) => {
       return res.status(400).json({ message: "Email already exists" });
     }
 
-    // Validate role
-    if (!["patient", "doctor"].includes(role)) {
-      return res.status(400).json({ message: "Invalid role" });
-    }
-
     // Hash the password
     const hashedPassword = await hashPassword(password);
     if (!hashedPassword) {
@@ -74,22 +63,13 @@ exports.signup = async (req, res, next) => {
       name,
       email,
       password: hashedPassword,
-      role,
       phone,
+      dateOfBirth,
     };
 
-    // Add role-specific profile data
-    if (role === "patient") {
-      userData.patientProfile = {
-        dateOfBirth: profileData.dateOfBirth,
-        assignedDoctor: profileData.assignedDoctor,
-      };
-    } else if (role === "doctor") {
-      userData.doctorProfile = {
-        licenseNumber: profileData.licenseNumber,
-        specialization: profileData.specialization,
-        hospital: profileData.hospital,
-      };
+    // Handle profile image upload
+    if (req.files && req.files.ProfileImage) {
+      userData.ProfileImage = req.files.ProfileImage[0].filename;
     }
 
     // Create new user
@@ -106,8 +86,9 @@ exports.signup = async (req, res, next) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
         phone: user.phone,
+        dateOfBirth: user.dateOfBirth,
+        ProfileImage: user.ProfileImage,
       },
     });
   } catch (err) {
@@ -134,8 +115,9 @@ exports.signin = async (req, res, next) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
         phone: user.phone,
+        dateOfBirth: user.dateOfBirth,
+        ProfileImage: user.ProfileImage,
       },
     });
   } catch (err) {
@@ -158,10 +140,9 @@ exports.getProfile = async (req, res, next) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
         phone: user.phone,
-        profile:
-          user.role === "patient" ? user.patientProfile : user.doctorProfile,
+        dateOfBirth: user.dateOfBirth,
+        ProfileImage: user.ProfileImage,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -175,28 +156,26 @@ exports.getProfile = async (req, res, next) => {
 // UPDATE USER PROFILE CONTROLLER
 exports.updateProfile = async (req, res, next) => {
   try {
-    const { name, phone, ...profileData } = req.body;
+    const { name, phone, dateOfBirth } = req.body;
     const userId = req.user.id;
 
-    // Find user first to check role
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    const updateData = { name, phone, dateOfBirth };
 
-    const updateData = { name, phone };
-
-    // Update role-specific profile
-    if (user.role === "patient") {
-      updateData.patientProfile = {
-        ...user.patientProfile.toObject(),
-        ...profileData,
-      };
-    } else if (user.role === "doctor") {
-      updateData.doctorProfile = {
-        ...user.doctorProfile.toObject(),
-        ...profileData,
-      };
+    // Handle profile image upload
+    if (req.files && req.files.ProfileImage) {
+      // Delete old profile image if exists
+      const user = await User.findById(userId);
+      if (user.ProfileImage) {
+        const oldImagePath = path.join(
+          __dirname,
+          "../../media",
+          user.ProfileImage
+        );
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
+      }
+      updateData.ProfileImage = req.files.ProfileImage[0].filename;
     }
 
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
@@ -210,12 +189,9 @@ exports.updateProfile = async (req, res, next) => {
         id: updatedUser._id,
         name: updatedUser.name,
         email: updatedUser.email,
-        role: updatedUser.role,
         phone: updatedUser.phone,
-        profile:
-          updatedUser.role === "patient"
-            ? updatedUser.patientProfile
-            : updatedUser.doctorProfile,
+        dateOfBirth: updatedUser.dateOfBirth,
+        ProfileImage: updatedUser.ProfileImage,
       },
     });
   } catch (error) {
