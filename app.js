@@ -9,10 +9,17 @@ const ErrorHandler = require("./middleware/errorHandler");
 const passport = require("passport");
 const path = require("path");
 const { localStrategy, JwtStrategy } = require("./middleware/passport");
+const {
+  clinicianLocalStrategy,
+  clinicianJwtStrategy,
+} = require("./middleware/clinician.passport");
 
 //import route
 const usersRouter = require("./api/User/User.router.js");
+const clinicianRouter = require("./api/Clinician/Clinician.router.js");
+const educationRouter = require("./api/EducationalContent/EducationalContent.router.js");
 const sensorRouter = require("./api/Sensor/Sensor.router.js");
+
 //init
 dotenv.config();
 const app = express();
@@ -25,9 +32,13 @@ app.use(morgan("dev"));
 app.use(express.json());
 passport.use("local", localStrategy);
 passport.use("jwt", JwtStrategy);
+passport.use("clinician-local", clinicianLocalStrategy);
+passport.use("clinician-jwt", clinicianJwtStrategy);
 
 //Routes
 app.use("/users", usersRouter);
+app.use("/clinicians", clinicianRouter);
+app.use("/educational-content", educationRouter);
 app.use("/media", express.static(path.join(__dirname, "media")));
 app.use("/api", sensorRouter);
 //Handler

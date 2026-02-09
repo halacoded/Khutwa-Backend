@@ -65,8 +65,4 @@ const clinicianSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// Indexes
-clinicianSchema.index({ email: 1 }, { unique: true });
-clinicianSchema.index({ licenseNumber: 1 }, { unique: true });
-
 module.exports = mongoose.model("Clinician", clinicianSchema);
