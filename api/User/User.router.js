@@ -7,6 +7,11 @@ const {
   signin,
   getProfile,
   updateProfile,
+  shareMyData,
+  removeSharedAccess,
+  getUsersICanSee,
+  getUsersSharingWithMe,
+  searchUsersForSharing,
 } = require("./User.controller");
 const authenticate = passport.authenticate("jwt", { session: false });
 
@@ -14,12 +19,12 @@ const authenticate = passport.authenticate("jwt", { session: false });
 usersRouter.post(
   "/signup",
   upload.fields([{ name: "ProfileImage", maxCount: 1 }]),
-  signup
+  signup,
 );
 usersRouter.post(
   "/signin",
   passport.authenticate("local", { session: false }),
-  signin
+  signin,
 );
 
 // User management routes
@@ -28,7 +33,30 @@ usersRouter.put(
   "/profile",
   authenticate,
   upload.fields([{ name: "ProfileImage", maxCount: 1 }]),
-  updateProfile
+  updateProfile,
 );
+
+// ============================
+// SHARED ACCESS ROUTES
+// ============================
+
+// Share my data with another user
+usersRouter.post("/share", authenticate, shareMyData);
+
+// Remove sharing access from a user
+usersRouter.delete("/unshare/:targetUserId", authenticate, removeSharedAccess);
+
+// Get users who can see my data (users I've shared with)
+usersRouter.get("/shared/users-i-can-see", authenticate, getUsersICanSee);
+
+// Get users whose data I can see (users sharing with me)
+usersRouter.get(
+  "/shared/users-sharing-with-me",
+  authenticate,
+  getUsersSharingWithMe,
+);
+
+// Search for users to share with
+usersRouter.get("/shared/search", authenticate, searchUsersForSharing);
 
 module.exports = usersRouter;
