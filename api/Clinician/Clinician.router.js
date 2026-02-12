@@ -7,6 +7,11 @@ const {
   signin,
   getProfile,
   updateProfile,
+  assignPatient,
+  removePatient,
+  getAssignedPatients,
+  searchPatients,
+  getPatientProfile,
 } = require("./Clinician.controller");
 
 // Use Passport for both signin and protected routes
@@ -34,5 +39,33 @@ clinicianRouter.put(
   upload.fields([{ name: "ProfileImage", maxCount: 1 }]),
   updateProfile,
 );
+
+// ============================
+// PATIENT MANAGEMENT ROUTES
+// ============================
+// Search patients to assign
+clinicianRouter.get("/patients/search", clinicianJwtAuth, searchPatients);
+
+// Get all assigned patients
+clinicianRouter.get("/patients", clinicianJwtAuth, getAssignedPatients);
+
+// Assign a patient
+clinicianRouter.post("/patients/assign", clinicianJwtAuth, assignPatient);
+
+// Remove a patient
+clinicianRouter.delete("/patients/:patientId", clinicianJwtAuth, removePatient);
+
+// ============================
+// PATIENT DATA ACCESS ROUTES
+// ============================
+// Get patient profile
+clinicianRouter.get(
+  "/patients/:patientId",
+  clinicianJwtAuth,
+  getPatientProfile,
+);
+// GET PATIENT HEALTH REPORTS (Clinician view)
+// GET PATIENT ALERTS (Clinician view)
+// GET PATIENT SUMMARY DASHBOARD
 
 module.exports = clinicianRouter;
