@@ -410,3 +410,42 @@ exports.searchUsersForSharing = async (req, res, next) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+// ============================
+// REMOVE USER FROM MY SHARED WITH ME (Stop seeing their data)
+// ============================
+exports.removeFromMyShared = async (req, res, next) => {
+  try {
+    const { targetUserId } = req.params; // The user I want to stop seeing
+    const currentUserId = req.user.id;
+
+    // Check if target user exists
+    const targetUser = await User.findById(targetUserId);
+    if (!targetUser) {
+      return res.status(404).json({ message: "Target user not found" });
+    }
+
+    // Remove target user from current user's sharedWithMe array
+    const updatedCurrentUser = await User.findByIdAndUpdate(
+      currentUserId,
+      {
+        $pull: {
+          sharedWithMe: { userId: targetUserId },
+        },
+      },
+      { new: true },
+    ).populate("sharedWithMe.userId", "name email ProfileImage");
+
+    res.status(200).json({
+      message: "User removed from your shared list successfully",
+      user: {
+        id: updatedCurrentUser._id,
+        name: updatedCurrentUser.name,
+        email: updatedCurrentUser.email,
+        sharedWithMe: updatedCurrentUser.sharedWithMe,
+      },
+    });
+  } catch (error) {
+    console.error("Remove from my shared error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};

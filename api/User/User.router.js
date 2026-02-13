@@ -9,6 +9,7 @@ const {
   updateProfile,
   shareMyData,
   removeSharedAccess,
+  removeFromMyShared,
   getUsersICanSee,
   getUsersSharingWithMe,
   searchUsersForSharing,
@@ -45,6 +46,13 @@ usersRouter.post("/share", authenticate, shareMyData);
 
 // Remove sharing access from a user
 usersRouter.delete("/unshare/:targetUserId", authenticate, removeSharedAccess);
+
+// Remove a user from my shared list (stop seeing their data) - NEW ROUTE
+usersRouter.delete(
+  "/shared/remove/:targetUserId",
+  authenticate,
+  removeFromMyShared,
+);
 
 // Get users who can see my data (users I've shared with)
 usersRouter.get("/shared/users-i-can-see", authenticate, getUsersICanSee);
