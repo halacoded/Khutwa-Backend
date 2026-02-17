@@ -24,7 +24,7 @@ const sensorRouter = require("./api/Sensor/Sensor.router.js");
 dotenv.config();
 const app = express();
 connectDB();
-const Port = process.env.PORT;
+const Port = process.env.PORT || 10000;
 
 //middleware
 app.use(cors());
