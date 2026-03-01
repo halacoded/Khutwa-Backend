@@ -31,21 +31,35 @@ const Port = process.env.PORT || 10000;
 // CORS Options (Lovable + localhost + Postman)
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true); // Postman / server-to-server
-    if (origin.endsWith(".lovable.app")) return callback(null, true); // Lovable
-    if (origin.includes("localhost")) return callback(null, true); // local dev
-    return callback(null, true); // open policy
+// CORS Options (Lovable + localhost + Postman)
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow Postman / server-to-server requests (no origin header)
+    if (!origin) return callback(null, true);
+
+    // Allow all Lovable preview + production domains
+    if (origin.endsWith(".lovable.app")) return callback(null, true);
+
+    // Allow local dev
+    if (origin.includes("localhost")) return callback(null, true);
+
+    // Open policy (you can lock this later)
+    return callback(null, true);
   },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 // middleware
-app.use(cors(corsOptions)); // ✅ enough for CORS
+app.use(cors(corsOptions));
 app.use(morgan("dev"));
 app.use(express.json());
 
-// ✅ Safe OPTIONS handler (avoids app.options("*") crash on your Node/dep versions)
+// Safe OPTIONS handler (avoids app.options("*") crash)
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
 app.use((req, res, next) => {
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
@@ -68,7 +82,6 @@ app.use("/api", sensorRouter);
 app.use(NotFoundHandller);
 app.use(ErrorHandler);
 
-// start listen
 app.listen(Port, () => {
   console.log(`Server running on ${Port}`);
 });
