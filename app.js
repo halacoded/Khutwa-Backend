@@ -1,51 +1,74 @@
-//import
+require("dotenv").config();
+
+// imports
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
-const dotenv = require("dotenv");
 const connectDB = require("./database");
 const NotFoundHandller = require("./middleware/notFoundHandler");
 const ErrorHandler = require("./middleware/errorHandler");
 const passport = require("passport");
 const path = require("path");
+
+// passport strategies
 const { localStrategy, JwtStrategy } = require("./middleware/passport");
 const {
   clinicianLocalStrategy,
   clinicianJwtStrategy,
 } = require("./middleware/clinician.passport");
 
-//import route
+// routes
 const usersRouter = require("./api/User/User.router.js");
 const clinicianRouter = require("./api/Clinician/Clinician.router.js");
 const educationRouter = require("./api/EducationalContent/EducationalContent.router.js");
 const sensorRouter = require("./api/Sensor/Sensor.router.js");
-// const FootAnalysisRouter = require("./api/FootAnalysis/FootAnalysis.router.js");
-//init
-dotenv.config();
+
+// init
 const app = express();
 connectDB();
 const Port = process.env.PORT || 10000;
 
-//middleware
-app.use(cors());
+// CORS Options (Lovable + localhost + Postman)
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // Postman / server-to-server
+    if (origin.endsWith(".lovable.app")) return callback(null, true); // Lovable
+    if (origin.includes("localhost")) return callback(null, true); // local dev
+    return callback(null, true); // open policy
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+// middleware
+app.use(cors(corsOptions)); // ✅ enough for CORS
 app.use(morgan("dev"));
 app.use(express.json());
+
+// ✅ Safe OPTIONS handler (avoids app.options("*") crash on your Node/dep versions)
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
+// passport init
 passport.use("local", localStrategy);
 passport.use("jwt", JwtStrategy);
 passport.use("clinician-local", clinicianLocalStrategy);
 passport.use("clinician-jwt", clinicianJwtStrategy);
 
-//Routes
+// routes
 app.use("/users", usersRouter);
 app.use("/clinicians", clinicianRouter);
 app.use("/educational-content", educationRouter);
 app.use("/media", express.static(path.join(__dirname, "media")));
 app.use("/api", sensorRouter);
-// app.use("/FootAnalysis", FootAnalysisRouter);
-//Handler
+
+// handlers
 app.use(NotFoundHandller);
 app.use(ErrorHandler);
-//start listen
+
+// start listen
 app.listen(Port, () => {
   console.log(`Server running on ${Port}`);
 });
