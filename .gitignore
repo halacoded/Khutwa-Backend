@@ -1,8 +1,5 @@
 node_modules/
-<<<<<<< HEAD
 .env
 .DS_Store
-=======
 .env.DS_Store
 .DS_Store
->>>>>>> cfb5ae8 (Ignore macOS .DS_Store)
