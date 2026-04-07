@@ -22,6 +22,7 @@ const usersRouter = require("./api/User/User.router.js");
 const clinicianRouter = require("./api/Clinician/Clinician.router.js");
 const educationRouter = require("./api/EducationalContent/EducationalContent.router.js");
 const sensorRouter = require("./api/Sensor/Sensor.router.js");
+const alertRouter = require("./api/Alert/Alert.router.js");
 
 // init
 const app = express();
@@ -79,6 +80,7 @@ app.use("/clinicians", clinicianRouter);
 app.use("/educational-content", educationRouter);
 app.use("/media", express.static(path.join(__dirname, "media")));
 app.use("/sensor", sensorRouter);
+app.use("/alerts", alertRouter);
 
 // handlers
 app.use(NotFoundHandller);

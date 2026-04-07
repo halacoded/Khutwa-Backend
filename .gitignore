@@ -3,3 +3,8 @@ node_modules/
 .DS_Store
 .env.DS_Store
 .DS_Store
+<<<<<<< Updated upstream
+=======
+>>>>>>> cfb5ae8 (Ignore macOS .DS_Store)
+.vercel
+>>>>>>> Stashed changes
