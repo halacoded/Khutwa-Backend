@@ -78,7 +78,7 @@ app.use("/users", usersRouter);
 app.use("/clinicians", clinicianRouter);
 app.use("/educational-content", educationRouter);
 app.use("/media", express.static(path.join(__dirname, "media")));
-app.use("/api", sensorRouter);
+app.use("/sensor", sensorRouter);
 
 // handlers
 app.use(NotFoundHandller);
