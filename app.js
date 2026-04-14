@@ -23,6 +23,7 @@ const clinicianRouter = require("./api/Clinician/Clinician.router.js");
 const educationRouter = require("./api/EducationalContent/EducationalContent.router.js");
 const sensorRouter = require("./api/Sensor/Sensor.router.js");
 const alertRouter = require("./api/Alert/Alert.router.js");
+const footAnalysisRouter = require("./api/FootAnalysis/FootAnalysis.router.js");
 
 // init
 const app = express();
@@ -81,6 +82,7 @@ app.use("/educational-content", educationRouter);
 app.use("/media", express.static(path.join(__dirname, "media")));
 app.use("/sensor", sensorRouter);
 app.use("/alerts", alertRouter);
+app.use("/FootAnalysis", footAnalysisRouter);
 
 // handlers
 app.use(NotFoundHandller);

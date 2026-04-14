@@ -13,7 +13,7 @@ exports.createFootAnalysis = async (req, res) => {
     form.append("file", fs.createReadStream(imagePath));
 
     const flaskResponse = await axios.post(
-      "http://localhost:5000/predict",
+      `${process.env.ML_API_URL}/predict`,
       form,
       {
         headers: form.getHeaders(),
