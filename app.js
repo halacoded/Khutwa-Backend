@@ -91,3 +91,5 @@ app.use(ErrorHandler);
 app.listen(Port, () => {
   console.log(`Server running on ${Port}`);
 });
+
+module.exports = app;
