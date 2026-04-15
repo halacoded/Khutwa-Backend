@@ -13,8 +13,10 @@ exports.createFootAnalysis = async (req, res) => {
       contentType: req.file.mimetype || "image/jpeg",
     });
 
+    const mlUrl = `${process.env.ML_API_URL}/predict`;
+    console.log("ML_API_URL:", process.env.ML_API_URL, "| Full URL:", mlUrl);
     const flaskResponse = await axios.post(
-      `${process.env.ML_API_URL}/predict`,
+      mlUrl,
       form,
       {
         headers: form.getHeaders(),
