@@ -1,22 +1,24 @@
 const FootAnalysis = require("../../models/FootAnalysis");
 const axios = require("axios");
 const FormData = require("form-data");
-const fs = require("fs");
 
 // Create new foot analysis
 exports.createFootAnalysis = async (req, res) => {
   try {
     const userId = req.user._id;
-    const imagePath = req.file.path;
-    // Send image to Flask server
+    // Send image buffer directly to Flask server (no disk write needed)
     const form = new FormData();
-    form.append("file", fs.createReadStream(imagePath));
+    form.append("file", req.file.buffer, {
+      filename: req.file.originalname || "foot.jpg",
+      contentType: req.file.mimetype || "image/jpeg",
+    });
 
     const flaskResponse = await axios.post(
       `${process.env.ML_API_URL}/predict`,
       form,
       {
         headers: form.getHeaders(),
+        timeout: 55000, // 55s — allows Render free tier to wake up
       },
     );
 
@@ -25,7 +27,7 @@ exports.createFootAnalysis = async (req, res) => {
     // Save analysis result in MongoDB
     const analysis = new FootAnalysis({
       user: userId,
-      imageUrl: imagePath,
+      imageUrl: "",
       result: prediction,
       confidence: confidence,
     });
@@ -38,7 +40,13 @@ exports.createFootAnalysis = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Server error" });
+    const isTimeout = error.code === "ECONNABORTED" || error.code === "ETIMEDOUT";
+    res.status(500).json({
+      success: false,
+      message: isTimeout
+        ? "ML server is waking up, please try again in 30 seconds"
+        : error.message || "Server error",
+    });
   }
 };
 
