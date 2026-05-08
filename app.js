@@ -24,10 +24,10 @@ const educationRouter = require("./api/EducationalContent/EducationalContent.rou
 const sensorRouter = require("./api/Sensor/Sensor.router.js");
 const alertRouter = require("./api/Alert/Alert.router.js");
 const footAnalysisRouter = require("./api/FootAnalysis/FootAnalysis.router.js");
+const appointmentRouter = require("./api/Appointment/Appointment.router.js");
 
 // init
 const app = express();
-connectDB();
 const Port = process.env.PORT || 10000;
 
 // CORS Options
@@ -69,6 +69,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// ensure DB is connected before every request
+app.use((req, res, next) => {
+  connectDB().then(() => next()).catch(next);
+});
+
 // passport init
 passport.use("local", localStrategy);
 passport.use("jwt", JwtStrategy);
@@ -83,6 +88,7 @@ app.use("/media", express.static(path.join(__dirname, "media")));
 app.use("/sensor", sensorRouter);
 app.use("/alerts", alertRouter);
 app.use("/FootAnalysis", footAnalysisRouter);
+app.use("/appointments", appointmentRouter);
 
 // handlers
 app.use(NotFoundHandller);

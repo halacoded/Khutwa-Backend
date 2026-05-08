@@ -13,6 +13,10 @@ const {
   getUsersICanSee,
   getUsersSharingWithMe,
   searchUsersForSharing,
+  sendCaregiverRequest,
+  getPendingCaregiverRequests,
+  approveCaregiverRequest,
+  rejectCaregiverRequest,
 } = require("./User.controller");
 const authenticate = passport.authenticate("jwt", { session: false });
 
@@ -66,5 +70,21 @@ usersRouter.get(
 
 // Search for users to share with
 usersRouter.get("/shared/search", authenticate, searchUsersForSharing);
+
+// ============================
+// CAREGIVER REQUEST ROUTES
+// ============================
+
+// Caregiver sends an access request to a patient
+usersRouter.post("/caregiver-request", authenticate, sendCaregiverRequest);
+
+// Patient gets their pending caregiver requests
+usersRouter.get("/caregiver-requests/pending", authenticate, getPendingCaregiverRequests);
+
+// Patient approves a caregiver request
+usersRouter.put("/caregiver-requests/:requesterId/approve", authenticate, approveCaregiverRequest);
+
+// Patient rejects a caregiver request
+usersRouter.put("/caregiver-requests/:requesterId/reject", authenticate, rejectCaregiverRequest);
 
 module.exports = usersRouter;

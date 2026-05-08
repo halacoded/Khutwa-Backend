@@ -1,4 +1,6 @@
 const Alert = require("../../models/Alert");
+const Appointment = require("../../models/Appointment");
+const Clinician = require("../../models/Clinician");
 
 // POST /alerts — patient app sends an alert
 const createAlert = async (req, res, next) => {
@@ -19,6 +21,41 @@ const createAlert = async (req, res, next) => {
     }
 
     const alert = await Alert.create({ userId, alertType, severity, details });
+
+    // Auto-schedule appointment for high-risk alerts
+    if (severity === "high") {
+      try {
+        // Find the first clinician who has this patient assigned
+        const clinician = await Clinician.findOne({ assignedPatients: userId });
+        if (clinician) {
+          // Check if there's already an auto-scheduled appointment in the next 14 days
+          const twoWeeksOut = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+          const existingAppt = await Appointment.findOne({
+            patientId: userId,
+            clinicianId: clinician._id,
+            status: { $in: ["auto-scheduled", "confirmed"] },
+            scheduledAt: { $lte: twoWeeksOut },
+          });
+
+          if (!existingAppt) {
+            // Schedule 7 days from now
+            const scheduledAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            await Appointment.create({
+              patientId: userId,
+              clinicianId: clinician._id,
+              triggeredByAlert: alert._id,
+              scheduledAt,
+              reason: `Auto-scheduled: High-risk ${alertType} alert detected`,
+              riskLevel: "high",
+            });
+          }
+        }
+      } catch (apptErr) {
+        // Don't fail the alert if appointment scheduling fails
+        console.error("Auto-schedule appointment error:", apptErr);
+      }
+    }
+
     res.status(201).json({ message: "Alert created", data: alert });
   } catch (error) {
     next(error);
