@@ -66,7 +66,7 @@ const createAlert = async (req, res, next) => {
 const getAlertsForClinician = async (req, res, next) => {
   try {
     const clinician = req.user;
-    const patientIds = clinician.patients || [];
+    const patientIds = clinician.assignedPatients || [];
 
     const alerts = await Alert.find({ userId: { $in: patientIds } })
       .sort({ createdAt: -1 })
