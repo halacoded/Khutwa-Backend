@@ -411,6 +411,139 @@ exports.searchUsersForSharing = async (req, res, next) => {
   }
 };
 // ============================
+// CAREGIVER REQUEST SYSTEM
+// ============================
+
+// Caregiver sends an access request to a patient
+exports.sendCaregiverRequest = async (req, res, next) => {
+  try {
+    const { patientId } = req.body;
+    const requesterId = req.user.id;
+
+    if (!patientId) {
+      return res.status(400).json({ message: "patientId is required" });
+    }
+
+    const patient = await User.findById(patientId);
+    if (!patient) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
+
+    // Don't request if already sharing
+    const alreadySharing = patient.sharedWithMe.some(
+      (item) => item.userId.toString() === requesterId.toString(),
+    );
+    if (alreadySharing) {
+      return res.status(400).json({ message: "You already have access to this patient's data" });
+    }
+
+    // Don't create duplicate pending request
+    const alreadyPending = patient.pendingCaregiverRequests.some(
+      (r) => r.requesterId.toString() === requesterId.toString(),
+    );
+    if (alreadyPending) {
+      return res.status(400).json({ message: "Request already sent and pending approval" });
+    }
+
+    patient.pendingCaregiverRequests.push({ requesterId, createdAt: new Date() });
+    await patient.save();
+
+    res.status(200).json({ message: "Access request sent successfully" });
+  } catch (error) {
+    console.error("Send caregiver request error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Patient gets their pending caregiver requests
+exports.getPendingCaregiverRequests = async (req, res, next) => {
+  try {
+    const patient = await User.findById(req.user.id).populate(
+      "pendingCaregiverRequests.requesterId",
+      "name email ProfileImage phone",
+    );
+
+    if (!patient) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const requests = patient.pendingCaregiverRequests.map((r) => ({
+      id: r.requesterId._id,
+      name: r.requesterId.name,
+      email: r.requesterId.email,
+      ProfileImage: r.requesterId.ProfileImage,
+      phone: r.requesterId.phone,
+      requestedAt: r.createdAt,
+    }));
+
+    res.status(200).json({ message: "Pending caregiver requests", count: requests.length, requests });
+  } catch (error) {
+    console.error("Get pending requests error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Patient approves a caregiver request
+exports.approveCaregiverRequest = async (req, res, next) => {
+  try {
+    const { requesterId } = req.params;
+    const patientId = req.user.id;
+
+    const patient = await User.findById(patientId);
+    if (!patient) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const pendingIndex = patient.pendingCaregiverRequests.findIndex(
+      (r) => r.requesterId.toString() === requesterId.toString(),
+    );
+    if (pendingIndex === -1) {
+      return res.status(404).json({ message: "No pending request from this user" });
+    }
+
+    // Remove from pending
+    patient.pendingCaregiverRequests.splice(pendingIndex, 1);
+
+    // Grant access: add patient to caregiver's sharedWithMe
+    const caregiver = await User.findById(requesterId);
+    if (!caregiver) {
+      return res.status(404).json({ message: "Requester not found" });
+    }
+
+    const alreadySharing = caregiver.sharedWithMe.some(
+      (item) => item.userId.toString() === patientId.toString(),
+    );
+    if (!alreadySharing) {
+      caregiver.sharedWithMe.push({ userId: patientId, createdAt: new Date() });
+    }
+
+    await Promise.all([patient.save(), caregiver.save()]);
+
+    res.status(200).json({ message: "Caregiver request approved. They can now see your data." });
+  } catch (error) {
+    console.error("Approve caregiver request error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Patient rejects a caregiver request
+exports.rejectCaregiverRequest = async (req, res, next) => {
+  try {
+    const { requesterId } = req.params;
+    const patientId = req.user.id;
+
+    await User.findByIdAndUpdate(patientId, {
+      $pull: { pendingCaregiverRequests: { requesterId } },
+    });
+
+    res.status(200).json({ message: "Caregiver request rejected" });
+  } catch (error) {
+    console.error("Reject caregiver request error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// ============================
 // REMOVE USER FROM MY SHARED WITH ME (Stop seeing their data)
 // ============================
 exports.removeFromMyShared = async (req, res, next) => {

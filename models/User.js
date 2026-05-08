@@ -26,6 +26,21 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
+
+    // Caregiver access requests waiting for this user's approval
+    pendingCaregiverRequests: [
+      {
+        requesterId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   { timestamps: true },
 );
